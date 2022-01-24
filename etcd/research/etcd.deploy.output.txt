@@ -1,0 +1,33 @@
+NAME: maestro-etcd
+LAST DEPLOYED: Wed Jan 19 13:41:49 2022
+NAMESPACE: maestro
+STATUS: deployed
+REVISION: 1
+TEST SUITE: None
+NOTES:
+CHART NAME: etcd
+CHART VERSION: 6.13.1
+APP VERSION: 3.5.1
+
+** Please be patient while the chart is being deployed **
+
+etcd can be accessed via port 2379 on the following DNS name from within your cluster:
+
+    maestro-etcd.maestro.svc.cluster.local
+
+To create a pod that you can use as a etcd client run the following command:
+
+    kubectl run maestro-etcd-client --restart='Never' --image docker.io/bitnami/etcd:3.5.1 --env ETCDCTL_ENDPOINTS="maestro-etcd.maestro.svc.cluster.local:2379" --namespace maestro --command -- sleep infinity
+
+Then, you can set/get a key using the commands below:
+
+    kubectl exec --namespace maestro -it maestro-etcd-client -- bash
+    etcdctl  put /message Hello
+    etcdctl  get /message
+
+To connect to your etcd server from outside the cluster execute the following commands:
+
+    kubectl port-forward --namespace maestro svc/maestro-etcd 2379:2379 &
+    echo "etcd URL: http://127.0.0.1:2379"
+WARNING: Rolling tag detected (bitnami/etcd:3.5.1), please note that it is strongly recommended to avoid using rolling tags in a production environment.
++info https://docs.bitnami.com/containers/how-to/understand-rolling-tags-containers/

@@ -1,0 +1,142 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: conductor-service
+  namespace: maestro
+data:
+  protocol: 'http'
+  host: 'conductor'
+  port: '8000'
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: buffer-service
+  namespace: maestro
+data:
+  protocol: 'https'
+  host: 'safe-tundra-80304.herokuapp.com'
+  port: '443'
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: webex-teams-config
+  namespace: maestro
+data:
+  webex_teams_polling_interval: '5'
+  webex_teams_room_title: 'GVE RTP Lab - Scenario Management'
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: conductor
+  namespace: maestro
+spec:
+  selector:
+    app.kubernetes.io/name: conductor
+  ports:
+  - port: 8000
+    targetPort: 8000
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: poller
+  namespace: maestro
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: poller
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: poller
+    spec:
+      containers:
+      - name: poller
+        image: broadcaststorm/maestro-poller-service:0.2.0
+        imagePullPolicy: IfNotPresent
+        resources:
+          requests:
+            cpu: "50m"
+            memory: "100M"
+          limits:
+            cpu: "100m"
+            memory: "200M"
+        env:
+        - name: WEBEX_TEAMS_ACCESS_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: webex-teams-tokens
+              key: webex_teams_access_token
+        - name: WEBEX_TEAMS_ROOM_TITLE
+          valueFrom:
+            configMapKeyRef:
+              name: webex-teams-config
+              key: webex_teams_room_title
+        - name: WEBEX_TEAMS_POLLING_INTERVAL
+          valueFrom:
+            configMapKeyRef:
+              name: webex-teams-config
+              key: webex_teams_polling_interval
+        - name: CONDUCTOR_PROTO
+          valueFrom:
+            configMapKeyRef:
+              name: conductor-service
+              key: protocol
+        - name: CONDUCTOR_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: conductor-service
+              key: host
+        - name: CONDUCTOR_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: conductor-service
+              key: port
+        - name: BUFFER_PROTO
+          valueFrom:
+            configMapKeyRef:
+              name: buffer-service
+              key: protocol
+        - name: BUFFER_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: buffer-service
+              key: host
+        - name: BUFFER_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: buffer-service
+              key: port
+      restartPolicy: Always
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: conductor
+  namespace: maestro
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: conductor
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: conductor
+    spec:
+      containers:
+      - name: poller
+        image: broadcaststorm/maestro-conductor-service:0.3.0
+        imagePullPolicy: IfNotPresent
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "200M"
+          limits:
+            cpu: "200m"
+            memory: "400M"
+      restartPolicy: Always
