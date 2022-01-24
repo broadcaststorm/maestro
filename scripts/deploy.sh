@@ -12,3 +12,6 @@ kubectl create secret generic webex-teams-tokens -n maestro --from-file=webex_te
 
 # Deploy application
 kubectl apply -f kubernetes/deployment.yaml
+
+# Web front end
+echo "Fire up the Heroku bot service"
