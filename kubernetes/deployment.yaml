@@ -1,6 +1,16 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
+  name: conductor-storage
+  namespace: maestro
+data:
+  type: 'ETCD'
+  host: 'maestro-etcd'
+  port: '2379'
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
   name: conductor-service
   namespace: maestro
 data:
@@ -139,4 +149,20 @@ spec:
           limits:
             cpu: "200m"
             memory: "400M"
+        env:
+        - name: CONDUCTOR_STORAGE_TYPE
+          valueFrom:
+            configMapKeyRef:
+              name: conductor-storage
+              key: type
+        - name: CONDUCTOR_STORAGE_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: conductor-storage
+              key: host
+        - name: CONDUCTOR_STORAGE_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: conductor-storage
+              key: port
       restartPolicy: Always
